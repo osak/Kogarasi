@@ -1,20 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Comment (
-   Comment
-  ,name
-  ,body
-  ,posted
+   Comment (..)
+  ,makeComment
 ) where
 
 import Data.Text
 import Data.Time (UTCTime)
 
+type IDType = Integer
+
 data Comment = Comment {
   name :: Text,
   body :: Text,
-  posted :: UTCTime
+  posted :: UTCTime,
+  pageId :: IDType
 } deriving (Show, Eq, Ord)
 
-anonymousComment :: Text -> UTCTime -> Comment
-anonymousComment = Comment "anonymous"
+makeComment :: Text -> Text -> UTCTime -> IDType -> Comment
+makeComment = Comment
+
+anonymousComment :: Text -> UTCTime -> IDType -> Comment
+anonymousComment = makeComment "anonymous"
