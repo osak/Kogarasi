@@ -1,12 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 module CommentStorage (
     storeComment
+   ,fetchCommentsByPageId
 ) where
 
 import Comment
 import Database.HDBC
 import Database.HDBC.MySQL
 import Data.Map (Map, (!))
+import Data.Time (localTimeToUTC, utc)
 
 connectInfo :: MySQLConnectInfo
 connectInfo = defaultMySQLConnectInfo { 
@@ -28,10 +30,18 @@ storeComment comment = do
     commit conn
     disconnect conn
 
+fetchCommentsByPageId :: IDType -> IO [Comment]
+fetchCommentsByPageId pid = do
+    conn <- connection
+    stmt <- prepare conn "SELECT name, body, posted, page_id FROM comments WHERE page_id = ?"
+    execute stmt [toSql pid]
+    rows <- fetchAllRowsMap stmt
+    return $ map fromMap rows
+
 fromMap :: Map String SqlValue -> Comment
 fromMap row = Comment {
     name = fromSql $ row ! "name",
     body = fromSql $ row ! "body",
-    posted = fromSql $ row ! "posted",
+    posted = localTimeToUTC utc . fromSql $ row ! "posted",
     pageId = fromSql $ row ! "page_id"
 }

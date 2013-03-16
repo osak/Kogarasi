@@ -3,6 +3,7 @@
 module Comment (
    Comment (..)
   ,makeComment
+  ,IDType
 ) where
 
 import Data.Text
