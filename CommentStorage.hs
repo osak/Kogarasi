@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module CommentStorage (
     storeComment
    ,fetchCommentsByPageId
@@ -13,7 +12,7 @@ import Data.Time (localTimeToUTC, utc)
 connectInfo :: MySQLConnectInfo
 connectInfo = defaultMySQLConnectInfo { 
     mysqlHost = "localhost", 
-    mysqlUser = "osa", 
+    mysqlUser = "osak", 
     mysqlPassword = "test",
     mysqlDatabase = "Kogarasi",
     mysqlUnixSocket = "/run/mysqld/mysqld.sock"
