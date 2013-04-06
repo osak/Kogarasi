@@ -41,14 +41,22 @@ store = do
     go comment = (liftIO $ storeComment comment) >> 
                  successPage comment
 
+setGeneralHeaders :: CGI ()
+setGeneralHeaders = do
+  setHeader "Content-type" "text/html"
+
 fetch :: CGI CGIResult
 fetch = undefined
 
 errorPage :: String -> CGI CGIResult
-errorPage = undefined
+errorPage message = do
+  setGeneralHeaders
+  outputError 400 message []
 
 successPage :: Comment -> CGI CGIResult
-successPage = undefined
+successPage comment = do
+  setGeneralHeaders
+  output "<html><body>Success</body></html>"
 
 cgiMain :: CGI CGIResult
 cgiMain = do
@@ -56,7 +64,7 @@ cgiMain = do
   case fromMaybe "" action of
     "store" -> store
     "fetch" -> fetch
-    _ -> errorPage ""
+    _ -> errorPage "Bad Request"
 
 main :: IO ()
 main = runCGI $ cgiMain
