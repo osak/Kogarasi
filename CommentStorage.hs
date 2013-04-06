@@ -11,11 +11,11 @@ import Data.Time (localTimeToUTC, utc)
 
 connectInfo :: MySQLConnectInfo
 connectInfo = defaultMySQLConnectInfo { 
-    mysqlHost = "localhost", 
+    mysqlHost = "127.0.0.1", 
     mysqlUser = "osak", 
     mysqlPassword = "test",
     mysqlDatabase = "Kogarasi",
-    mysqlUnixSocket = "/run/mysqld/mysqld.sock"
+    mysqlPort = 3306
 }
 
 connection :: IO Connection
@@ -26,7 +26,6 @@ storeComment comment = do
     conn <- connection
     stmt <- prepare conn "INSERT INTO comments (name, body, posted, page_id) VALUES (?, ?, ?, ?)"
     execute stmt [toSql $ name comment, toSql $ body comment, toSql $ posted comment, toSql $ pageId comment]
-    commit conn
     disconnect conn
 
 fetchCommentsByPageId :: IDType -> IO [Comment]
