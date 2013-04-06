@@ -17,7 +17,7 @@ validate :: InputDictionary -> Either String InputDictionary
 validate dict = foldl' check (Right dict) requiredFields
   where
     check acc field = acc >> if member field dict then acc
-                                                  else Left ("Key " ++ field ++ " not found")
+                                                  else Left ("Key " ++ show field ++ " not found")
 
 createCommentFrom :: InputDictionary -> UTCTime -> Comment
 createCommentFrom dict posted = let
@@ -33,13 +33,17 @@ createCommentFrom dict posted = let
 
 store :: CGI CGIResult
 store = do
-  inputs <- getInputs
+  inputs <- getInputs >>= return . fromList
   curtime <- liftIO getCurrentTime
-  go $ createCommentFrom (fromList inputs) curtime
+  case validate inputs of
+    Left message -> errorPage message
+    Right _ -> go inputs curtime
   where
-    go :: Comment -> CGI CGIResult
-    go comment = (liftIO $ storeComment comment) >> 
-                 successPage comment
+    go :: InputDictionary -> UTCTime -> CGI CGIResult
+    go dict posted = do
+      let comment = createCommentFrom dict posted
+      liftIO $ storeComment comment
+      successPage comment
 
 setGeneralHeaders :: CGI ()
 setGeneralHeaders = do
@@ -67,4 +71,4 @@ cgiMain = do
     _ -> errorPage "Bad Request"
 
 main :: IO ()
-main = runCGI $ cgiMain
+main = runCGI $ handleErrors cgiMain
