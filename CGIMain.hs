@@ -1,12 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
+import Prelude hiding (concat)
 import Comment
 import CommentStorage
 import Network.CGI
 import Data.Maybe
-import Data.List (foldl')
-import Data.Map hiding (foldl')
+import Data.List (foldl', intercalate)
+import Data.Map hiding (foldl', map)
 import Data.Time (UTCTime, getCurrentTime)
-import Data.Text (pack)
+import Data.Text (Text, pack, unpack, concat)
 
 type InputDictionary = Map String String
 
@@ -58,6 +59,17 @@ fetch = do
       comments <- liftIO $ fetchCommentsByPageId (read (dict ! "pageId"))
       successPage comments
 
+commentTable :: [Comment] -> String
+commentTable comments = 
+  unpack $ concat ["<table><tr><th>Name</th><th>Body</th><th>PageID</th></tr>", concat $ map commentRow comments, "</table>"]
+  where
+    commentRow :: Comment -> Text
+    commentRow comment = 
+      let nameStr = name comment
+          bodyStr = body comment
+          pageIdStr = pack . show $ pageId comment
+      in concat ["<tr><td>", nameStr, "</td><td>", bodyStr, "</td><td>", pageIdStr, "</td></tr>"]
+
 errorPage :: String -> CGI CGIResult
 errorPage message = do
   setGeneralHeaders
@@ -66,7 +78,8 @@ errorPage message = do
 successPage :: [Comment] -> CGI CGIResult
 successPage comments = do
   setGeneralHeaders
-  output "<html><body>Success</body></html>"
+  let t = commentTable comments
+  output ("<html><body>" ++ t ++ "</body></html>")
 
 cgiMain :: CGI CGIResult
 cgiMain = do
