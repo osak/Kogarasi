@@ -4,19 +4,22 @@ import Comment
 import CommentStorage
 import Network.CGI
 import Data.Maybe
-import Data.List (foldl', intercalate)
+import Data.List (foldl')
 import Data.Map hiding (foldl', map)
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Text (Text, pack, unpack, concat)
 
 type InputDictionary = Map String String
 
+-- Check if requires fields are all exists.
+-- If some fields absent, return error message as Left.
 validate :: [String] -> InputDictionary -> Either String InputDictionary
 validate fields dict = foldl' check (Right dict) fields
   where
     check acc field = acc >> if member field dict then acc
                                                   else Left ("Key " ++ show field ++ " not found")
 
+-- Create comment from given dictionary and time.
 createCommentFrom :: InputDictionary -> UTCTime -> Comment
 createCommentFrom dict posted = let
   name = pack $ dict ! "name"
@@ -29,6 +32,7 @@ createCommentFrom dict posted = let
      pageId = pageId
   }
 
+-- Store action.
 store :: CGI CGIResult
 store = do
   inputs <- getInputs >>= return . fromList
@@ -43,10 +47,7 @@ store = do
       liftIO $ storeComment comment
       successPage [comment]
 
-setGeneralHeaders :: CGI ()
-setGeneralHeaders = do
-  setHeader "Content-type" "text/html"
-
+-- Fetch action.
 fetch :: CGI CGIResult
 fetch = do
   inputs <- getInputs >>= return . fromList
@@ -59,16 +60,26 @@ fetch = do
       comments <- liftIO $ fetchCommentsByPageId (read (dict ! "pageId"))
       successPage comments
 
+-- Generate HTML table from comment list.
 commentTable :: [Comment] -> String
 commentTable comments = 
-  unpack $ concat ["<table><tr><th>Name</th><th>Body</th><th>PageID</th></tr>", concat $ map commentRow comments, "</table>"]
+  unpack $ concat [
+    "<table><tr><th>Name</th><th>Body</th><th>PageID</th></tr>", 
+    concat $ map commentRow comments, 
+    "</table>"
+  ]
   where
+    -- Generate a row from given comment.
     commentRow :: Comment -> Text
     commentRow comment = 
       let nameStr = name comment
           bodyStr = body comment
           pageIdStr = pack . show $ pageId comment
       in concat ["<tr><td>", nameStr, "</td><td>", bodyStr, "</td><td>", pageIdStr, "</td></tr>"]
+
+setGeneralHeaders :: CGI ()
+setGeneralHeaders = do
+  setHeader "Content-type" "text/html"
 
 errorPage :: String -> CGI CGIResult
 errorPage message = do
