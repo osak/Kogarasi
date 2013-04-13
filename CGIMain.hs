@@ -10,11 +10,8 @@ import Data.Text (pack)
 
 type InputDictionary = Map String String
 
-requiredFields :: [String]
-requiredFields = ["name", "body", "pageId"]
-
-validate :: InputDictionary -> Either String InputDictionary
-validate dict = foldl' check (Right dict) requiredFields
+validate :: [String] -> InputDictionary -> Either String InputDictionary
+validate fields dict = foldl' check (Right dict) fields
   where
     check acc field = acc >> if member field dict then acc
                                                   else Left ("Key " ++ show field ++ " not found")
@@ -35,7 +32,7 @@ store :: CGI CGIResult
 store = do
   inputs <- getInputs >>= return . fromList
   curtime <- liftIO getCurrentTime
-  case validate inputs of
+  case validate ["name", "body", "pageId"] inputs of
     Left message -> errorPage message
     Right _ -> go inputs curtime
   where
@@ -43,22 +40,31 @@ store = do
     go dict posted = do
       let comment = createCommentFrom dict posted
       liftIO $ storeComment comment
-      successPage comment
+      successPage [comment]
 
 setGeneralHeaders :: CGI ()
 setGeneralHeaders = do
   setHeader "Content-type" "text/html"
 
 fetch :: CGI CGIResult
-fetch = undefined
+fetch = do
+  inputs <- getInputs >>= return . fromList
+  case validate ["pageId"] inputs of
+    Left message -> errorPage message
+    Right _ -> go inputs
+  where
+    go :: InputDictionary -> CGI CGIResult
+    go dict = do
+      comments <- liftIO $ fetchCommentsByPageId (read (dict ! "pageId"))
+      successPage comments
 
 errorPage :: String -> CGI CGIResult
 errorPage message = do
   setGeneralHeaders
   outputError 400 message []
 
-successPage :: Comment -> CGI CGIResult
-successPage comment = do
+successPage :: [Comment] -> CGI CGIResult
+successPage comments = do
   setGeneralHeaders
   output "<html><body>Success</body></html>"
 
