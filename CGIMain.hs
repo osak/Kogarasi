@@ -8,6 +8,7 @@ import Data.List (foldl')
 import Data.Map hiding (foldl', map)
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Text (Text, pack, unpack, concat)
+import Text.JSON
 
 type InputDictionary = Map String String
 
@@ -63,19 +64,20 @@ fetch = do
 -- Generate HTML table from comment list.
 commentTable :: [Comment] -> String
 commentTable comments = 
-  unpack $ concat [
-    "<table><tr><th>Name</th><th>Body</th><th>PageID</th></tr>", 
-    concat $ map commentRow comments, 
-    "</table>"
-  ]
+  unpack . concat $ map formatComment comments
   where
-    -- Generate a row from given comment.
-    commentRow :: Comment -> Text
-    commentRow comment = 
+    -- Generate a HTML from given comment.
+    formatComment :: Comment -> Text
+    formatComment comment = 
       let nameStr = name comment
           bodyStr = body comment
           pageIdStr = pack . show $ pageId comment
-      in concat ["<tr><td>", nameStr, "</td><td>", bodyStr, "</td><td>", pageIdStr, "</td></tr>"]
+      in concat [
+          "<div class=\"comment\">",
+          "<div class=\"comment-name\">", nameStr, "</div>",
+          "<div class=\"comment-body\">", bodyStr, "</div>",
+          "</div>"
+        ]
 
 setGeneralHeaders :: CGI ()
 setGeneralHeaders = do
