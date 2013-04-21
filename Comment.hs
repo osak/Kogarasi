@@ -2,18 +2,16 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, FlexibleContexts, GADTs #-}
 
 module Comment (
-   Comment (..)
+   Comment
   ,makeComment
 ) where
 
 import Data.Time (UTCTime)
-import Data.Map
+import Data.Map (fromList, (!))
 import Text.JSON
 import Database.Persist
-import Database.Persist.MySQL
 import Database.Persist.TH
-import Control.Monad.Trans.Resource (runResourceT)
-import Control.Monad.Logger (runNoLoggingT)
+import DBSetting
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistUpperCase|
 Comment
@@ -29,6 +27,10 @@ makeComment = Comment
 
 anonymousComment :: String -> UTCTime -> Int-> Comment
 anonymousComment = makeComment "anonymous"
+
+storeComment :: Comment -> IO (Key Comment)
+storeComment comment = runSQLAction $ do
+  insert comment
 
 instance JSON Comment where
   readJSON json = 
