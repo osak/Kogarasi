@@ -4,6 +4,8 @@
 module Comment (
    Comment
   ,makeComment
+  ,storeComment
+  ,fetchCommentsByPageId
 ) where
 
 import Data.Time (UTCTime)
@@ -31,6 +33,11 @@ anonymousComment = makeComment "anonymous"
 storeComment :: Comment -> IO (Key Comment)
 storeComment comment = runSQLAction $ do
   insert comment
+
+fetchCommentsByPageId :: Int -> IO [Comment]
+fetchCommentsByPageId i = runSQLAction $ do
+  result <- selectList [CommentPageId ==. i] []
+  return $ map entityVal result
 
 instance JSON Comment where
   readJSON json = 
