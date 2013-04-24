@@ -6,6 +6,10 @@ module Comment (
   ,makeComment
   ,storeComment
   ,fetchCommentsByPageId
+  ,commentName
+  ,commentBody
+  ,commentPosted
+  ,commentPageId
 ) where
 
 import Data.Time (UTCTime)
