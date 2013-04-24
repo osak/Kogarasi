@@ -10,6 +10,7 @@ module Comment (
   ,commentBody
   ,commentPosted
   ,commentPageId
+  ,migrateAll
 ) where
 
 import Data.Time (UTCTime)
