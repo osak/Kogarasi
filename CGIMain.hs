@@ -1,13 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Prelude hiding (concat)
 import Comment
-import CommentStorage
 import Network.CGI
 import Data.Maybe
 import Data.List (foldl')
 import Data.Map hiding (foldl', map)
 import Data.Time (UTCTime, getCurrentTime)
-import Data.Text (Text, pack, unpack, concat)
 import Text.JSON
 
 type InputDictionary = Map String String
@@ -23,15 +21,10 @@ validate fields dict = foldl' check (Right dict) fields
 -- Create comment from given dictionary and time.
 createCommentFrom :: InputDictionary -> UTCTime -> Comment
 createCommentFrom dict posted = let
-  name = pack $ dict ! "name"
-  body = pack $ dict ! "body"
+  name = dict ! "name"
+  body = dict ! "body"
   pageId = read $ dict ! "pageId"
-  in Comment {
-     name = name,
-     body = body,
-     posted = posted,
-     pageId = pageId
-  }
+  in makeComment name body posted pageId
 
 -- Store action.
 store :: CGI CGIResult
@@ -61,24 +54,6 @@ fetch = do
       comments <- liftIO $ fetchCommentsByPageId (read (dict ! "pageId"))
       successPage comments
 
--- Generate HTML table from comment list.
-commentTable :: [Comment] -> String
-commentTable comments = 
-  unpack . concat $ map formatComment comments
-  where
-    -- Generate a HTML from given comment.
-    formatComment :: Comment -> Text
-    formatComment comment = 
-      let nameStr = name comment
-          bodyStr = body comment
-          pageIdStr = pack . show $ pageId comment
-      in concat [
-          "<div class=\"comment\">",
-          "<div class=\"comment-name\">", nameStr, "</div>",
-          "<div class=\"comment-body\">", bodyStr, "</div>",
-          "</div>"
-        ]
-
 setGeneralHeaders :: CGI ()
 setGeneralHeaders = do
   setHeader "Content-type" "text/html"
@@ -91,8 +66,7 @@ errorPage message = do
 successPage :: [Comment] -> CGI CGIResult
 successPage comments = do
   setGeneralHeaders
-  let t = commentTable comments
-  output ("<html><body>" ++ t ++ "</body></html>")
+  output $ encode $ showJSONs comments
 
 cgiMain :: CGI CGIResult
 cgiMain = do

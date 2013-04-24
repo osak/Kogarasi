@@ -1,30 +1,48 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, TemplateHaskell, QuasiQuotes, TypeFamilies #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, FlexibleContexts, GADTs #-}
 
 module Comment (
-   Comment (..)
+   Comment
   ,makeComment
-  ,IDType
+  ,storeComment
+  ,fetchCommentsByPageId
+  ,commentName
+  ,commentBody
+  ,commentPosted
+  ,commentPageId
+  ,migrateAll
 ) where
 
-import Data.Text
 import Data.Time (UTCTime)
-import Data.Map
+import Data.Map (fromList, (!))
 import Text.JSON
+import Database.Persist
+import Database.Persist.TH
+import DBSetting
 
-type IDType = Integer
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistUpperCase|
+Comment
+  name String
+  body String
+  posted UTCTime
+  pageId Int
+  deriving (Show)
+|]
 
-data Comment = Comment {
-  name :: Text,
-  body :: Text,
-  posted :: UTCTime,
-  pageId :: IDType
-} deriving (Show, Eq, Ord)
-
-makeComment :: Text -> Text -> UTCTime -> IDType -> Comment
+makeComment :: String -> String -> UTCTime -> Int-> Comment
 makeComment = Comment
 
-anonymousComment :: Text -> UTCTime -> IDType -> Comment
+anonymousComment :: String -> UTCTime -> Int-> Comment
 anonymousComment = makeComment "anonymous"
+
+storeComment :: Comment -> IO (Key Comment)
+storeComment comment = runSQLAction $ do
+  insert comment
+
+fetchCommentsByPageId :: Int -> IO [Comment]
+fetchCommentsByPageId i = runSQLAction $ do
+  result <- selectList [CommentPageId ==. i] []
+  return $ map entityVal result
 
 instance JSON Comment where
   readJSON json = 
@@ -47,15 +65,15 @@ instance JSON Comment where
                   Ok val -> val
                   _ -> error "No page_id"
         in Comment {
-             name = n,
-             body = b,
-             posted = p,
-             pageId = i
+             commentName = n,
+             commentBody = b,
+             commentPosted = p,
+             commentPageId = i
            }
 
   showJSON comment = JSObject $ toJSObject [
-                      ("name", showJSON $ name comment),
-                      ("body", showJSON $ body comment),
-                      ("posted", showJSON $ show $ posted comment),
-                      ("page_id", showJSON $ pageId comment)
+                      ("name", showJSON $ commentName comment),
+                      ("body", showJSON $ commentBody comment),
+                      ("posted", showJSON $ show $ commentPosted comment),
+                      ("page_id", showJSON $ commentPageId comment)
                      ]
