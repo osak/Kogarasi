@@ -6,11 +6,12 @@ import Database.Persist.MySQL
 import Control.Monad.Trans.Resource (runResourceT, ResourceT)
 import Control.Monad.Logger (runNoLoggingT, NoLoggingT)
 
+-- Should change this accroding to your environment!
 connectInfo :: ConnectInfo
 connectInfo = defaultConnectInfo {
                 connectHost = "localhost"
-               ,connectUser = "osak"
-               ,connectPassword = "test"
+               ,connectUser = "kogarasi"
+               ,connectPassword = "kogarasi"
                ,connectDatabase = "Kogarasi"
 }
 
