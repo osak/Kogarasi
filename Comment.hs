@@ -18,6 +18,7 @@ import Data.Map (fromList, (!))
 import Text.JSON
 import Database.Persist
 import Database.Persist.TH
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 import DBSetting
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistUpperCase|
@@ -59,7 +60,7 @@ instance JSON Comment where
                   Ok val -> val
                   _ -> error "No body"
             p = case readJSON (m ! "posted") of
-                  Ok val -> read val :: UTCTime
+                  Ok val -> posixSecondsToUTCTime $ fromIntegral (val :: Int)
                   _ -> error "No posted"
             i = case readJSON (m ! "page_id") of
                   Ok val -> val
@@ -74,6 +75,9 @@ instance JSON Comment where
   showJSON comment = JSObject $ toJSObject [
                       ("name", showJSON $ commentName comment),
                       ("body", showJSON $ commentBody comment),
-                      ("posted", showJSON $ show $ commentPosted comment),
+                      ("posted", showJSON $ posixSeconds $ commentPosted comment),
                       ("page_id", showJSON $ commentPageId comment)
                      ]
+    where
+      posixSeconds :: UTCTime -> Int
+      posixSeconds = round . utcTimeToPOSIXSeconds
