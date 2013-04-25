@@ -6,7 +6,8 @@ import Data.Maybe
 import Data.List (foldl')
 import Data.Map hiding (foldl', map)
 import Data.Time (UTCTime, getCurrentTime)
-import Text.JSON
+import Data.Aeson (toJSON, encode)
+import Data.ByteString.Lazy.Char8 (unpack)
 
 type InputDictionary = Map String String
 
@@ -19,25 +20,25 @@ validate fields dict = foldl' check (Right dict) fields
                                                   else Left ("Key " ++ show field ++ " not found")
 
 -- Create comment from given dictionary and time.
-createCommentFrom :: InputDictionary -> UTCTime -> Comment
+createCommentFrom :: InputDictionary -> UTCTime -> IO Comment
 createCommentFrom dict posted = let
   name = dict ! "name"
   body = dict ! "body"
-  pageId = read $ dict ! "pageId"
-  in makeComment name body posted pageId
+  slug = dict ! "slug"
+  in makeComment name body posted slug
 
 -- Store action.
 store :: CGI CGIResult
 store = do
   inputs <- getInputs >>= return . fromList
   curtime <- liftIO getCurrentTime
-  case validate ["name", "body", "pageId"] inputs of
+  case validate ["name", "body", "slug"] inputs of
     Left message -> errorPage message
     Right _ -> go inputs curtime
   where
     go :: InputDictionary -> UTCTime -> CGI CGIResult
     go dict posted = do
-      let comment = createCommentFrom dict posted
+      comment <- liftIO $ createCommentFrom dict posted
       liftIO $ storeComment comment
       successPage [comment]
 
@@ -45,18 +46,18 @@ store = do
 fetch :: CGI CGIResult
 fetch = do
   inputs <- getInputs >>= return . fromList
-  case validate ["pageId"] inputs of
+  case validate ["slug"] inputs of
     Left message -> errorPage message
     Right _ -> go inputs
   where
     go :: InputDictionary -> CGI CGIResult
     go dict = do
-      comments <- liftIO $ fetchCommentsByPageId (read (dict ! "pageId"))
+      comments <- liftIO $ fetchCommentsBySlug (dict ! "slug")
       successPage comments
 
 setGeneralHeaders :: CGI ()
 setGeneralHeaders = do
-  setHeader "Content-type" "text/html"
+  setHeader "Content-type" "text/plain"
 
 errorPage :: String -> CGI CGIResult
 errorPage message = do
@@ -66,7 +67,7 @@ errorPage message = do
 successPage :: [Comment] -> CGI CGIResult
 successPage comments = do
   setGeneralHeaders
-  output $ encode $ showJSONs comments
+  output $ unpack $ encode $ toJSON comments
 
 cgiMain :: CGI CGIResult
 cgiMain = do

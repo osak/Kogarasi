@@ -5,7 +5,7 @@ module Comment (
    Comment
   ,makeComment
   ,storeComment
-  ,fetchCommentsByPageId
+  ,fetchCommentsBySlug
   ,commentName
   ,commentBody
   ,commentPosted
@@ -14,44 +14,68 @@ module Comment (
 ) where
 
 import Data.Time (UTCTime)
-import Data.Map (fromList, (!))
-import Text.JSON
 import Database.Persist
 import Database.Persist.TH
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import DBSetting
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistUpperCase|
-Comment
+Page
+  slug String
+  UniquePage slug
+Comment json
   name String
   body String
   posted UTCTime
-  pageId Int
+  posted_posix Int
+  pageId PageId Eq
   deriving (Show)
 |]
 
-makeComment :: String -> String -> UTCTime -> Int-> Comment
-makeComment = Comment
+newPage :: String -> IO PageId
+newPage slug = runSQLAction $ do
+  insert $ Page slug
 
-anonymousComment :: String -> UTCTime -> Int-> Comment
-anonymousComment = makeComment "anonymous"
+makeComment :: String -> String -> UTCTime -> String -> IO Comment
+makeComment name body posted slug = do
+  maybePageId <- runSQLAction $ getBy $ UniquePage slug
+  pageId <- case maybePageId of
+              Nothing -> newPage slug
+              Just i -> return $ entityKey i
+  let postedPOSIX = posixSeconds posted
+  return $ Comment name body posted postedPOSIX pageId
+  where
+    posixSeconds :: UTCTime -> Int
+    posixSeconds = round . utcTimeToPOSIXSeconds
+
 
 storeComment :: Comment -> IO (Key Comment)
 storeComment comment = runSQLAction $ do
   insert comment
 
+fetchCommentsBySlug :: String -> IO [Comment]
+fetchCommentsBySlug slug = runSQLAction $ do
+  maybePageId <- getBy $ UniquePage slug
+  case maybePageId of
+    Nothing -> return []
+    Just pageId -> selectList [CommentPageId ==. entityKey pageId] [] >>= return . map entityVal
+
+{-
 fetchCommentsByPageId :: Int -> IO [Comment]
 fetchCommentsByPageId i = runSQLAction $ do
   result <- selectList [CommentPageId ==. i] []
   return $ map entityVal result
+-}
 
+{-
 instance JSON Comment where
   readJSON json = 
     case json of
       JSObject obj -> Ok $ go obj
       _ -> Error "Failed"
     where
-      go obj = 
+      go :: JSObject JSValue -> Comment
+      go obj =
         let m = fromList $ fromJSObject obj
             n = case readJSON (m ! "name") of
                   Ok val -> val
@@ -81,3 +105,4 @@ instance JSON Comment where
     where
       posixSeconds :: UTCTime -> Int
       posixSeconds = round . utcTimeToPOSIXSeconds
+-}
