@@ -73,11 +73,15 @@ successPage comments = do
 
 cgiMain :: CGI CGIResult
 cgiMain = do
-  action <- getInput "action"
-  case fromMaybe "" action of
-    "store" -> store
-    "fetch" -> fetch
-    _ -> errorPage "Bad Request"
+  method <- requestMethod
+  case method of
+    "GET" -> errorPage "GET is not supported"
+    "POST" -> do
+      action <- getInput "action"
+      case fromMaybe "" action of
+        "store" -> store
+        "fetch" -> fetch
+        _ -> errorPage "Bad Request"
 
 main :: IO ()
 main = runCGI $ handleErrors cgiMain
