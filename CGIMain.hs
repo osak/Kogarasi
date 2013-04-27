@@ -58,6 +58,8 @@ fetch = do
 setGeneralHeaders :: CGI ()
 setGeneralHeaders = do
   setHeader "Content-type" "text/plain"
+  setHeader "Pragma" "no-cache"
+  setHeader "Cache-control" "no-cache"
 
 errorPage :: String -> CGI CGIResult
 errorPage message = do
