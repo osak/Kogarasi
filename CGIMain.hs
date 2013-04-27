@@ -8,6 +8,7 @@ import Data.Map hiding (foldl', map)
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Aeson (toJSON, encode)
 import Data.ByteString.Lazy.Char8 (unpack)
+import Data.ByteString.Lazy.UTF8 (toString)
 
 type InputDictionary = Map String String
 
@@ -27,10 +28,13 @@ createCommentFrom dict posted = let
   slug = dict ! "slug"
   in makeComment name body posted slug
 
+getUTF8Inputs :: CGI [(String, String)]
+getUTF8Inputs = getInputsFPS >>= return . map (\(a,x) -> (a,toString x))
+
 -- Store action.
 store :: CGI CGIResult
 store = do
-  inputs <- getInputs >>= return . fromList
+  inputs <- getUTF8Inputs >>= return . fromList
   curtime <- liftIO getCurrentTime
   case validate ["name", "body", "slug"] inputs of
     Left message -> errorPage message
@@ -45,7 +49,7 @@ store = do
 -- Fetch action.
 fetch :: CGI CGIResult
 fetch = do
-  inputs <- getInputs >>= return . fromList
+  inputs <- getUTF8Inputs >>= return . fromList
   case validate ["slug"] inputs of
     Left message -> errorPage message
     Right _ -> go inputs
