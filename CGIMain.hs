@@ -57,18 +57,19 @@ fetch = do
 
 setGeneralHeaders :: CGI ()
 setGeneralHeaders = do
-  setHeader "Content-type" "text/plain"
   setHeader "Pragma" "no-cache"
   setHeader "Cache-control" "no-cache"
 
 errorPage :: String -> CGI CGIResult
 errorPage message = do
+  setHeader "Content-type" "text/html"
   setGeneralHeaders
   outputError 400 message []
 
 successPage :: [Comment] -> CGI CGIResult
 successPage comments = do
   setGeneralHeaders
+  setHeader "Content-type" "text/plain"
   output $ unpack $ encode $ toJSON comments
 
 cgiMain :: CGI CGIResult
