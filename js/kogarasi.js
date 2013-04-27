@@ -32,10 +32,11 @@ $(document).ready(function() {
                     for(var i = 0; i < data.length; ++i) {
                         var entry = data[i];
                         var utcDate = new Date(entry.posted_posix*1000);
+                        var body = entry.body.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
                         var html = '<div class="kogarasi-comment">'
                                    + '<div class="kogarasi-name">' + entry.name + '</div>'
                                    + '<div class="kogarasi-posted">' + utcDate.toLocaleDateString() + '</div>'
-                                   + '<div class="kogarasi-body">' + entry.body + '</div>'
+                                   + '<div class="kogarasi-body">' + body + '</div>'
                                    + '</div>';
                         $(this).append(html);
                     }
