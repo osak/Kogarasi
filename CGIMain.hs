@@ -9,6 +9,7 @@ import Data.Time (UTCTime, getCurrentTime)
 import Data.Aeson (toJSON, encode)
 import Data.ByteString.Lazy.Char8 (unpack)
 import Data.ByteString.Lazy.UTF8 (toString)
+import Data.Text (pack, strip)
 
 type InputDictionary = Map String String
 
@@ -38,7 +39,9 @@ store = do
   curtime <- liftIO getCurrentTime
   case validate ["name", "body", "slug"] inputs of
     Left message -> errorPage message
-    Right _ -> go inputs curtime
+    Right _ -> case strip $ pack (inputs ! "body") of
+                 "" -> errorPage "Body should not be empty"
+                 _ -> go inputs curtime
   where
     go :: InputDictionary -> UTCTime -> CGI CGIResult
     go dict posted = do
