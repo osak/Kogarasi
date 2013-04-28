@@ -6,12 +6,26 @@ function kogarasi_post(slug) {
     $.ajax({
         url: kogarasi_path,
         data: param,
-        dataType: 'json',
+        dataType: 'text',
         type: 'POST'
     }).done(function(data) {
     }).fail(function() {
     }).always(function() {
     });
+}
+
+function formatDate(date) {
+    function padded(val) {
+        if(val < 10) return "0" + val;
+        return ""+val;
+    }
+    var y = date.getFullYear();
+    var m = padded(date.getMonth()+1);
+    var d = padded(date.getDate());
+    var h = padded(date.getHours());
+    var mi = padded(date.getMinutes());
+    var s = padded(date.getSeconds());
+    return y + "/" + m + "/" + d + " " + h + ":" + mi + ":" + s;
 }
 
 $(document).ready(function() {
@@ -31,11 +45,12 @@ $(document).ready(function() {
                 } else {
                     for(var i = 0; i < data.length; ++i) {
                         var entry = data[i];
-                        var utcDate = new Date(entry.posted_posix*1000);
+                        var u = new Date(entry.posted_posix*1000);
+                        var dateString = formatDate(u);
                         var body = entry.body.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
                         var html = '<div class="kogarasi-comment">'
                                    + '<div class="kogarasi-name">' + entry.name + '</div>'
-                                   + '<div class="kogarasi-posted">' + utcDate.toLocaleDateString() + '</div>'
+                                   + '<div class="kogarasi-posted">' + dateString + '</div>'
                                    + '<div class="kogarasi-body">' + body + '</div>'
                                    + '</div>';
                         $(this).append(html);
