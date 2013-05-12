@@ -15,5 +15,5 @@ connectInfo = defaultConnectInfo {
                ,connectDatabase = "Kogarasi"
 }
 
-runSQLAction :: SqlPersist (ResourceT (NoLoggingT IO)) a -> IO a
+runSQLAction :: SqlPersistT (ResourceT (NoLoggingT IO)) a -> IO a
 runSQLAction = runNoLoggingT . runResourceT . withMySQLConn connectInfo . runSqlConn
