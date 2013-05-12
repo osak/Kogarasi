@@ -9,20 +9,24 @@ function kogarasiLoad(slug) {
         type: 'GET'
     }).done(function(data) {
         $(this).html('');
-        for(var i = 0; i < data.length; ++i) {
-            var entry = data[i];
-            var u = new Date(entry.posted_posix*1000);
-            var dateString = formatDate(u);
-            var body = entry.body.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
-            var html = '<div class="kogarasi-comment">'
-                       + '<div class="kogarasi-name">' + entry.name + '</div>'
-                       + '<div class="kogarasi-posted">' + dateString + '</div>'
-                       + '<div class="kogarasi-body">' + body + '</div>'
-                       + '</div>';
-            $(this).append(html);
+        if(data.length == 0) {
+            $(this).append("<p>No comments</p>");
+        } else {
+            for(var i = 0; i < data.length; ++i) {
+                var entry = data[i];
+                var u = new Date(entry.posted_posix*1000);
+                var dateString = formatDate(u);
+                var body = entry.body.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
+                var html = '<div class="kogarasi-comment">'
+                           + '<div class="kogarasi-name">' + entry.name + '</div>'
+                           + '<div class="kogarasi-posted">' + dateString + '</div>'
+                           + '<div class="kogarasi-body">' + body + '</div>'
+                           + '</div>';
+                $(this).append(html);
+            }
         }
     }).fail(function() {
-        $(this).append("<p>No comments</p>");
+        $(this).append("<p>Failed to fetch comments.</p>");
     }).always(function() {
         $(this).append('<div class="kogarasi-form">'
             + '<form action="">'
