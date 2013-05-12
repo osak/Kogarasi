@@ -7,6 +7,7 @@ import Data.Map hiding (map)
 import Control.Applicative
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Text.Lazy
+import Network.HTTP.Types (mkStatus)
 
 type InputDictionary = Map Text Text
 
@@ -23,10 +24,15 @@ main = scotty 3123 $ do
   get "/show/:slug" $ do
     slug <- param "slug"
     comments <- liftIO $ fetchCommentsBySlug slug
+    header "Pragma" "no-cache"
+    header "Cache-control" "no-cache"
     json comments
   post "/post" $ do
     dict <- fromList <$> params
-    curtime <- liftIO $ getCurrentTime
-    comment <- liftIO $ createCommentFrom dict curtime
-    _ <- liftIO $ storeComment comment
-    json comment
+    case strip $ dict ! "body" of
+      "" -> status $ mkStatus 400 "Body should not be empty"
+      _ -> do
+        curtime <- liftIO $ getCurrentTime
+        comment <- liftIO $ createCommentFrom dict curtime
+        _ <- liftIO $ storeComment comment
+        json comment
