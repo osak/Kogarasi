@@ -1,46 +1,44 @@
-kogarasiPath = "http://localhost/~osak/CGIMain.fcgi";
+kogarasiPath = "http://localhost/kogarasi"
 
 function kogarasiLoad(slug) {
     var context = $('#kogarasi-' + slug);
     $.ajax({
-        url: kogarasiPath,
-        data: {"action": "fetch", "slug": slug},
+        url: kogarasiPath + "/show/" + slug,
         context: context,
         dataType: 'json',
-        type: 'POST'
+        type: 'GET'
     }).done(function(data) {
         $(this).html('');
-        if(data.length == 0) {
-            $(this).append("<p>No comments</p>");
-        } else {
-            for(var i = 0; i < data.length; ++i) {
-                var entry = data[i];
-                var u = new Date(entry.posted_posix*1000);
-                var dateString = formatDate(u);
-                var body = entry.body.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
-                var html = '<div class="kogarasi-comment">'
-                           + '<div class="kogarasi-name">' + entry.name + '</div>'
-                           + '<div class="kogarasi-posted">' + dateString + '</div>'
-                           + '<div class="kogarasi-body">' + body + '</div>'
-                           + '</div>';
-    $(this).append(html);
-            }
+        for(var i = 0; i < data.length; ++i) {
+            var entry = data[i];
+            var u = new Date(entry.posted_posix*1000);
+            var dateString = formatDate(u);
+            var body = entry.body.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
+            var html = '<div class="kogarasi-comment">'
+                       + '<div class="kogarasi-name">' + entry.name + '</div>'
+                       + '<div class="kogarasi-posted">' + dateString + '</div>'
+                       + '<div class="kogarasi-body">' + body + '</div>'
+                       + '</div>';
+            $(this).append(html);
         }
+    }).fail(function() {
+        $(this).append("<p>No comments</p>");
+    }).always(function() {
         $(this).append('<div class="kogarasi-form">'
-                       + '<form action="">'
-                       + 'Name: <input type="text" id="kogarasi-name-' + slug + '" /><br />'
-                       + '<span style="vertical-align: top">Body:</span> <textarea rows="5" id="kogarasi-body-' + slug + '"></textarea><br />'
-                       + '<input type="button" value="Submit" onclick="javascript:kogarasiPost(\'' + slug + '\')"/>'
-                       + '</form></div>');
+            + '<form action="">'
+            + 'Name: <input type="text" id="kogarasi-name-' + slug + '" /><br />'
+            + '<span style="vertical-align: top">Body:</span> <textarea rows="5" id="kogarasi-body-' + slug + '"></textarea><br />'
+            + '<input type="button" value="Submit" onclick="javascript:kogarasiPost(\'' + slug + '\')"/>'
+            + '</form></div>');
     });
 }
 
 function kogarasiPost(slug) {
     var name = $('#kogarasi-name-' + slug).val();
     var body = $('#kogarasi-body-' + slug).val();
-    var param = {"action": "store", "name": name, "body": body, "slug": slug};
+    var param = {"name": name, "body": body, "slug": slug};
     $.ajax({
-        url: kogarasiPath,
+        url: kogarasiPath + "/post",
         data: param,
         dataType: 'text',
         type: 'POST'
