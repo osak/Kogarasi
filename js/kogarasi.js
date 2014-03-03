@@ -1,7 +1,16 @@
 kogarasiPath = "http://localhost/kogarasi"
 
+function kogarasiExpand(slug) {
+    var context = $('#kogarasi-' + slug);
+    context.css('height', 'auto').css('overflow', '');
+    console.log(context.children('.kogarasi-expand'));
+    context.find('.kogarasi-expand').remove();
+    context.find('.kogarasi-footer').css('position', 'static');
+}
+
 function kogarasiLoad(slug) {
     var context = $('#kogarasi-' + slug);
+    var length = 0;
     $.ajax({
         url: kogarasiPath + "/show/" + slug,
         context: context,
@@ -11,24 +20,35 @@ function kogarasiLoad(slug) {
         $(this).html('');
         if(data.length == 0) {
             $(this).append("<p>No comments</p>");
+            empty = true;
         } else {
             for(var i = 0; i < data.length; ++i) {
                 var entry = data[i];
                 var u = new Date(entry.posted_posix*1000);
                 var dateString = formatDate(u);
+                var name = entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
                 var body = entry.body.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
+                body = body.replace(/(https?:\/\/[a-zA-Z0-9%.\/]+)/g, function(){return '<a href="' + RegExp.$1 + '">' + RegExp.$1 + '</a>'});
                 var html = '<div class="kogarasi-comment">'
-                           + '<div class="kogarasi-name">' + entry.name + '</div>'
+                           + '<div class="kogarasi-name">' + name + '</div>'
                            + '<div class="kogarasi-posted">' + dateString + '</div>'
                            + '<div class="kogarasi-body">' + body + '</div>'
                            + '</div>';
                 $(this).append(html);
             }
+            length = data.length;
         }
     }).fail(function() {
         $(this).append("<p>Failed to fetch comments.</p>");
     }).always(function() {
-        $(this).append('<div class="kogarasi-form">'
+        var container = $(this);
+        if(length > 0) {
+            container = $('<div class="kogarasi-footer"><div class="kogarasi-expand">'
+                + '<span class="kogarasi-expand-text"><a href="#" onclick="javascript:kogarasiExpand(\'' + slug + '\'); return false;">Show all ' + length + ' comments</a></span>'
+                + '</div></div>');
+            $(this).append(container);
+        }
+        container.append('<div class="kogarasi-form">'
             + '<form action="">'
             + 'Name: <input type="text" id="kogarasi-name-' + slug + '" /><br />'
             + '<span style="vertical-align: top">Body:</span> <textarea rows="5" id="kogarasi-body-' + slug + '"></textarea><br />'
