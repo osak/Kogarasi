@@ -10,7 +10,7 @@ module Comment (
   ,commentBody
   ,commentPosted
   ,commentPageId
-  ,migrateAll
+  ,Comment.migrateAll
 ) where
 
 import Data.Time (UTCTime)
@@ -18,11 +18,9 @@ import Database.Persist
 import Database.Persist.TH
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import DBSetting
+import Page
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistUpperCase|
-Page
-  slug String
-  UniquePage slug
 Comment json
   name String
   body String
@@ -32,16 +30,12 @@ Comment json
   deriving (Show)
 |]
 
-newPage :: String -> IO PageId
-newPage slug = runSQLAction $ do
-  insert $ Page slug
-
 makeComment :: String -> String -> UTCTime -> String -> IO Comment
 makeComment name body posted slug = do
-  maybePageId <- runSQLAction $ getBy $ UniquePage slug
-  pageId <- case maybePageId of
+  maybePage <- runSQLAction $ getBy $ UniquePage slug
+  pageId <- case maybePage of
               Nothing -> newPage slug
-              Just i -> return $ entityKey i
+              Just page -> return $ entityKey page
   let postedPOSIX = posixSeconds posted
   return $ Comment name body posted postedPOSIX pageId
   where
@@ -55,10 +49,10 @@ storeComment comment = runSQLAction $ do
 
 fetchCommentsBySlug :: String -> IO [Comment]
 fetchCommentsBySlug slug = runSQLAction $ do
-  maybePageId <- getBy $ UniquePage slug
-  case maybePageId of
+  maybePage <- getBy $ UniquePage slug
+  case maybePage of
     Nothing -> return []
-    Just pageId -> selectList [CommentPageId ==. entityKey pageId] [] >>= return . map entityVal
+    Just page -> selectList [CommentPageId ==. entityKey page] [] >>= return . map entityVal
 
 {-
 fetchCommentsByPageId :: Int -> IO [Comment]
