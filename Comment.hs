@@ -2,15 +2,9 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, FlexibleContexts, GADTs #-}
 
 module Comment (
-   Comment
-  ,makeComment
+  makeComment
   ,storeComment
   ,fetchCommentsBySlug
-  ,commentName
-  ,commentBody
-  ,commentPosted
-  ,commentPageId
-  ,Comment.migrateAll
 ) where
 
 import Data.Time (UTCTime)
