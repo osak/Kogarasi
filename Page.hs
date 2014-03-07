@@ -6,12 +6,7 @@ module Page where
 import Database.Persist
 import Database.Persist.TH
 import DBSetting
-
-share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistUpperCase|
-Page
-  slug String
-  UniquePage slug
-|]
+import Model
 
 newPage :: String -> IO PageId
 newPage slug = runSQLAction $ do

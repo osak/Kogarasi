@@ -1,24 +1,14 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell, QuasiQuotes, TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, FlexibleContexts, GADTs #-}
 
-module Rating (
-  Rating
-) where
+module Rating where
 
 import Control.Applicative
 import Database.Persist
 import Database.Persist.TH
 import DBSetting
+import Model
 import Page
-
-share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistUpperCase|
-Rating json
-  positive  Int
-  negative  Int
-  pageId PageId Eq
-  UniqueRating pageId
-  deriving (Show)
-|]
 
 newRating :: PageId -> IO RatingId
 newRating pageId = runSQLAction $ insert $ Rating 0 0 pageId
