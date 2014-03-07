@@ -28,6 +28,13 @@ main = scotty 3123 $ do
     header "Cache-control" "no-cache"
     json comments
     header "Content-Type" "application/json; charset=utf-8"
+  get "/rating/:slug" $ do
+    slug <- param "slug"
+    rating <- liftIO $ fetchRatingBySlug slug
+    header "Pragma" "no-cache"
+    header "Cache-control" "no-cache"
+    json rating
+    header "Content-Type" "application/json; charset=utf-8"
   post "/post" $ do
     dict <- fromList <$> params
     case strip $ dict ! "body" of
