@@ -1,13 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Web.Scotty
-import Comment
 import Control.Monad.IO.Class (liftIO)
 import Data.Map hiding (map)
 import Control.Applicative
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Text.Lazy
 import Network.HTTP.Types (mkStatus)
+import Model
+import Comment
+import Rating
 
 type InputDictionary = Map Text Text
 
@@ -44,3 +46,11 @@ main = scotty 3123 $ do
         comment <- liftIO $ createCommentFrom dict curtime
         _ <- liftIO $ storeComment comment
         json comment
+  post "/rating/:slug/positive" $ do
+    slug <- param "slug"
+    liftIO $ positiveVote slug
+    text "Success"
+  post "/rating/:slug/negative" $ do
+    slug <- param "slug"
+    liftIO $ negativeVote slug
+    text "Success"

@@ -9,18 +9,19 @@ import Database.Persist.TH
 import DBSetting
 import Model
 import Page
+import Control.Monad.IO.Class
 
 newRating :: PageId -> IO RatingId
 newRating pageId = runSQLAction $ insert $ Rating 0 0 pageId
 
 vote :: [Update Rating] -> String -> IO ()
-vote upd slug = do
-  pageId <- fetchPageIdBySlug slug
-  maybeRating <- runSQLAction $ getBy $ UniqueRating pageId
-  ratingId <- case maybeRating of
+vote upd slug = runSQLAction $ do
+  pageId <- liftIO $ fetchPageIdBySlug slug
+  maybeRating <- liftIO $ runSQLAction $ getBy $ UniqueRating pageId
+  ratingId <- liftIO $ case maybeRating of
                 Nothing -> newRating pageId
                 Just rating -> return $ entityKey rating
-  runSQLAction $ update ratingId upd
+  update ratingId upd
 
 positiveVote :: String -> IO ()
 positiveVote = vote [RatingPositive +=. 1]
