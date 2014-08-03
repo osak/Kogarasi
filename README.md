@@ -5,19 +5,19 @@ A comment server written in Haskell.
 
 1. Setting up database
     
-    $ sudo -u postgres createdb -O kogarasi kogarasi
+        $ sudo -u postgres createdb -O kogarasi kogarasi
 
 2. Write database settings in DBSetting.hs
 3. Build
 
-    $ cabal install persistent persistent-postgresql scotty
-    $ ghc Migrator
-    $ ghc ScottyMain
+        $ cabal install persistent persistent-postgresql scotty
+        $ ghc Migrator
+        $ ghc ScottyMain
 
 4. Prepare DB
 
-    $ ./Migrator
+        $ ./Migrator
 
 5. Run
 
-    $ sudo -u kogarasi ./ScottyMain
+        $ sudo -u kogarasi ./ScottyMain
