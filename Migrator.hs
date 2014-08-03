@@ -1,5 +1,5 @@
 import DBSetting
-import Database.Persist.MySQL
+import Database.Persist.Postgresql
 import Control.Monad.IO.Class
 import Model
 
